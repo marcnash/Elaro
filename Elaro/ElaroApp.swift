@@ -13,24 +13,14 @@ struct ElaroApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .modelContainer(for: [Milestone.self,
-                                      MilestoneProgress.self,
-                                      ChildProfile.self,
-                                      AppSettings.self,
-                                      BehaviorPlanTemplate.self, BehaviorStepTemplate.self,
-                                      BehaviorPlanProgress.self, BehaviorStepProgress.self])
+                .modelContainer(for: [FocusArea.self, BuildingBlock.self, ActionTemplate.self,
+                                      TemplateVariant.self, ActionInstance.self, WeeklySummary.self])
                 .task {
                     // Seed on first run
-                    if let container = try? ModelContainer(for: Milestone.self,
-                                                         MilestoneProgress.self,
-                                                         ChildProfile.self,
-                                                         AppSettings.self,
-                                                         BehaviorPlanTemplate.self, 
-                                                         BehaviorStepTemplate.self,
-                                                         BehaviorPlanProgress.self, 
-                                                         BehaviorStepProgress.self) {
+                    if let container = try? ModelContainer(for: FocusArea.self, BuildingBlock.self, ActionTemplate.self,
+                                                         TemplateVariant.self, ActionInstance.self, WeeklySummary.self) {
                         let ctx = ModelContext(container)
-                        await seedIfNeeded(modelContext: ctx)
+                        await SeedImporter.run(modelContext: ctx)
                     }
                 }
         }

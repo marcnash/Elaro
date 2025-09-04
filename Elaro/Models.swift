@@ -1,143 +1,149 @@
-import SwiftUI
 import SwiftData
 import Foundation
 
-// MARK: - Focus Modes tailor the app without changing the underlying data model
-enum FocusMode: String, Codable, CaseIterable, Identifiable {
-    case milestones   // independence/life skills (default)
-    case chores       // household chores only
-    case behavior     // behavior targets, habits
-    case custom       // user-defined set
-
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .milestones: return "Milestones"
-        case .chores:     return "Chores"
-        case .behavior:   return "Behavior"
-        case .custom:     return "Custom"
-        }
-    }
-
-    // Which milestone kinds this mode surfaces by default
-    var allowedKinds: Set<MilestoneKind> {
-        switch self {
-        case .milestones: return [.skill, .selfCare]
-        case .chores:     return [.chore]
-        case .behavior:   return [.behavior]
-        case .custom:     return [.skill, .selfCare, .chore, .behavior]
-        }
-    }
-}
-
-enum MilestoneKind: String, Codable, CaseIterable {
-    case skill      // independence skill (wipe spills, carry dishes, etc.)
-    case selfCare   // dress self, place clothes in hamper
-    case chore      // recurring household chores
-    case behavior   // specific behavior targets (e.g., "use calm-down plan")
-}
-
-enum Category: String, Codable, CaseIterable {
-    case home, selfCare, school, social, other
-
-    var title: String {
-        switch self {
-        case .home:     return "Home"
-        case .selfCare: return "Self Care"
-        case .school:   return "School"
-        case .social:   return "Social"
-        case .other:    return "Other"
-        }
-    }
-}
-
-enum Stage: String, Codable, CaseIterable, Identifiable {
-    case introduced
-    case practicing
-    case independent
-
-    var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .introduced:  return "Introduced"
-        case .practicing:  return "Practicing"
-        case .independent: return "Independent"
-        }
-    }
-}
-
 // MARK: - SwiftData Models
-@Model
-final class Milestone {
-    @Attribute(.unique) var id: UUID = UUID()
-    var title: String
-    var detail: String?
-    var category: Category
-    var kind: MilestoneKind
-    var ageMin: Int?       // years
-    var ageMax: Int?
-    var tags: [String]
 
-    init(title: String,
-         detail: String? = nil,
-         category: Category,
-         kind: MilestoneKind,
-         ageMin: Int? = nil,
-         ageMax: Int? = nil,
-         tags: [String] = []) {
+@Model final class FocusArea {
+    @Attribute(.unique) var id: String // e.g., "independence", "emotion_skills"
+    var name: String
+    var active: Bool
+    var startedAt: Date
+    var buildingBlocks: [BuildingBlock] // exactly 3 when configured
+    var pinnedMicroSkillTitles: [String] // influence recommender
+    
+    init(id: String, name: String, active: Bool = true, startedAt: Date = Date.now, buildingBlocks: [BuildingBlock] = [], pinnedMicroSkillTitles: [String] = []) {
+        self.id = id
+        self.name = name
+        self.active = active
+        self.startedAt = startedAt
+        self.buildingBlocks = buildingBlocks
+        self.pinnedMicroSkillTitles = pinnedMicroSkillTitles
+    }
+}
+
+@Model final class BuildingBlock {
+    var type: String // microSkill | ritual | support
+    var title: String
+    var desc: String?
+    var tags: [String]
+    
+    init(type: String, title: String, desc: String? = nil, tags: [String] = []) {
+        self.type = type
         self.title = title
-        self.detail = detail
-        self.category = category
-        self.kind = kind
-        self.ageMin = ageMin
-        self.ageMax = ageMax
+        self.desc = desc
         self.tags = tags
     }
 }
 
-@Model
-final class ChildProfile {
-    @Attribute(.unique) var id: UUID = UUID()
-    var name: String
-    var birthdate: Date
-
-    init(name: String, birthdate: Date) {
-        self.name = name
-        self.birthdate = birthdate
+@Model final class ActionTemplate {
+    @Attribute(.unique) var id: String // stable id from seed
+    var focusId: String // FK → FocusArea.id
+    var title: String
+    var whyLine: String
+    var tags: [String]
+    var difficulty: Int // 1..5
+    var variants: [TemplateVariant]
+    var contraindications: [String]
+    var contentVersion: Int
+    
+    init(id: String, focusId: String, title: String, whyLine: String, tags: [String] = [], difficulty: Int = 1, variants: [TemplateVariant] = [], contraindications: [String] = [], contentVersion: Int = 1) {
+        self.id = id
+        self.focusId = focusId
+        self.title = title
+        self.whyLine = whyLine
+        self.tags = tags
+        self.difficulty = difficulty
+        self.variants = variants
+        self.contraindications = contraindications
+        self.contentVersion = contentVersion
     }
 }
 
-@Model
-final class MilestoneProgress {
-    @Attribute(.unique) var id: UUID = UUID()
-    var child: ChildProfile
-    var milestone: Milestone
-    var stage: Stage
-    var notes: String?
-    var weekOf: Date        // anchor to a week (e.g., Monday of that week)
-
-    init(child: ChildProfile,
-         milestone: Milestone,
-         stage: Stage,
-         notes: String? = nil,
-         weekOf: Date) {
-        self.child = child
-        self.milestone = milestone
-        self.stage = stage
-        self.notes = notes
-        self.weekOf = weekOf
+@Model final class TemplateVariant {
+    var durationMinutes: Int // 5|10|20
+    var steps: [String]
+    
+    init(durationMinutes: Int, steps: [String]) {
+        self.durationMinutes = durationMinutes
+        self.steps = steps
     }
 }
 
-// App-level preferences that tailor the experience without altering data models.
-@Model
-final class AppSettings {
-    @Attribute(.unique) var id: UUID = UUID()
-    var selectedModes: [FocusMode]
-    var selectedChildID: UUID? // simple way to "switch child"
-
-    init(selectedModes: [FocusMode] = [.milestones], selectedChildID: UUID? = nil) {
-        self.selectedModes = selectedModes
-        self.selectedChildID = selectedChildID
+@Model final class ActionInstance {
+    @Attribute(.unique) var id: String
+    var date: Date // day bucket
+    var focusId: String
+    var templateId: String
+    var variantDuration: Int // 5|10|20
+    var status: String // done | snoozed | skipped
+    var feltDifficulty: String? // light | ok | hard
+    var mood: String?
+    var note: String?
+    
+    init(id: String, date: Date, focusId: String, templateId: String, variantDuration: Int, status: String, feltDifficulty: String? = nil, mood: String? = nil, note: String? = nil) {
+        self.id = id
+        self.date = date
+        self.focusId = focusId
+        self.templateId = templateId
+        self.variantDuration = variantDuration
+        self.status = status
+        self.feltDifficulty = feltDifficulty
+        self.mood = mood
+        self.note = note
     }
+}
+
+@Model final class WeeklySummary {
+    @Attribute(.unique) var id: String
+    var weekStart: Date
+    var focusId: String
+    var winText: String
+    var hardText: String
+    var suggestedTweak: String // keep | scale_down | scale_up
+    
+    init(id: String, weekStart: Date, focusId: String, winText: String, hardText: String, suggestedTweak: String) {
+        self.id = id
+        self.weekStart = weekStart
+        self.focusId = focusId
+        self.winText = winText
+        self.hardText = hardText
+        self.suggestedTweak = suggestedTweak
+    }
+}
+
+// MARK: - Supporting Types
+
+enum FocusDepth: CaseIterable {
+    case today
+    case week
+    case month
+    case season
+    
+    var displayName: String {
+        switch self {
+        case .today:
+            return "Today"
+        case .week:
+            return "This Week"
+        case .month:
+            return "Monthly Plan"
+        case .season:
+            return "Season"
+        }
+    }
+}
+
+struct Suggestion: Identifiable {
+    let id = UUID()
+    let focus: FocusArea
+    let headline: String
+    let actions: [ActionTemplate]
+    let explainWhy: String
+}
+
+struct SeasonSummary {
+    let themeEvolution: String
+    let rungs: [String]
+    let storyPrompt: String
+    let nextSeasonPreview: String
 }

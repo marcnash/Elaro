@@ -2,81 +2,116 @@ import SwiftUI
 
 struct SeasonCard: View {
     let focus: FocusArea
-    
-    private var seasonSummary: SeasonSummary {
-        MockContent.seasonSummary(for: focus)
-    }
+    let engines: FocusEngineContainer?
     
     @State private var storyText: String = ""
+    @State private var seasonSummary: SeasonSummary?
+    @State private var isLoading = true
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Header
-            Text("Season: \(focus.displayName)")
+            Text("Season: \(focus.name)")
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            // Theme Evolution
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Theme evolution:")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text(seasonSummary.themeEvolution)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(16)
-            .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-            
-            // 2-3 Rungs
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Competency rungs touched:")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
+            if isLoading {
+                ProgressView("Loading season...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let summary = seasonSummary {
+                // Theme Evolution
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(seasonSummary.rungs, id: \.self) { rung in
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                                .font(.caption)
-                            
-                            Text(rung)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
+                    Text("Theme evolution:")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    Text(summary.themeEvolution)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(16)
+                .background(.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                
+                // 2-3 Rungs
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Competency rungs touched:")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(summary.rungs, id: \.self) { rung in
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                                
+                                Text(rung)
+                                    .font(.body)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
-            }
-            .padding(16)
-            .background(.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-            
-            // Story Prompt
-            VStack(alignment: .leading, spacing: 8) {
-                Text(seasonSummary.storyPrompt)
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                .padding(16)
+                .background(.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
                 
-                TextEditor(text: $storyText)
-                    .font(.body)
-                    .frame(minHeight: 80)
-                    .padding(8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
-            }
-            
-            // Next Season Preview
-            NextSeasonPreview(
-                preview: seasonSummary.nextSeasonPreview,
-                onAccept: {
-                    print("Next season accepted")
-                },
-                onKeep: {
-                    print("Keep current season")
+                // Story Prompt
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(summary.storyPrompt)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    TextEditor(text: $storyText)
+                        .font(.body)
+                        .frame(minHeight: 80)
+                        .padding(8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
                 }
-            )
+                
+                // Next Season Preview
+                NextSeasonPreview(
+                    preview: summary.nextSeasonPreview,
+                    onAccept: {
+                        print("Next season accepted")
+                    },
+                    onKeep: {
+                        print("Keep current season")
+                    }
+                )
+            } else {
+                VStack(spacing: 16) {
+                    Text("No season data available")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("Complete some activities to see your season summary")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             
             Spacer(minLength: 0)
+        }
+        .onAppear {
+            loadSeasonSummary()
+        }
+        .onChange(of: focus) {
+            loadSeasonSummary()
+        }
+    }
+    
+    private func loadSeasonSummary() {
+        guard let engines = engines else { return }
+        
+        isLoading = true
+        DispatchQueue.main.async {
+            // For now, use mock data. In a real implementation, this would
+            // analyze the user's progress and generate a season summary
+            let summary = MockContent.seasonSummary(for: focus)
+            self.seasonSummary = summary
+            self.isLoading = false
         }
     }
 }
@@ -134,9 +169,9 @@ struct NextSeasonPreview: View {
 }
 
 #Preview("Independence") {
-    SeasonCard(focus: .independence)
+    SeasonCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    SeasonCard(focus: .emotionSkills)
+    SeasonCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
 }

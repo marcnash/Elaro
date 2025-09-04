@@ -5,25 +5,29 @@ enum MockContent {
     // MARK: - Today Suggestions
     
     static let independenceToday = Suggestion(
-        focus: .independence,
+        focus: FocusArea(id: "independence", name: "Independence"),
         headline: "You pick the plan; I'm backup",
         actions: [
             ActionTemplate(
+                id: "A-IND-CHOICE-001",
+                focusId: "independence",
                 title: "Child chooses between two outfits",
                 whyLine: "Choice builds autonomy without chaos",
                 variants: [
-                    ActionVariant(durationMinutes: 5, steps: ["Lay out two outfits", "Let them pick"]),
-                    ActionVariant(durationMinutes: 10, steps: ["Two outfits", "They dress first", "Assist only if asked"]),
-                    ActionVariant(durationMinutes: 20, steps: ["Two outfits", "They dress", "Add simple accessory choice"])
+                    TemplateVariant(durationMinutes: 5, steps: ["Lay out two outfits", "Let them pick"]),
+                    TemplateVariant(durationMinutes: 10, steps: ["Two outfits", "They dress first", "Assist only if asked"]),
+                    TemplateVariant(durationMinutes: 20, steps: ["Two outfits", "They dress", "Add simple accessory choice"])
                 ]
             ),
             ActionTemplate(
+                id: "A-IND-TRY-FIRST-001",
+                focusId: "independence",
                 title: "Try first, ask for help after",
                 whyLine: "Wait time invites initiative",
                 variants: [
-                    ActionVariant(durationMinutes: 5, steps: ["Set a 30s wait before helping"]),
-                    ActionVariant(durationMinutes: 10, steps: ["Set 60s wait", "Name one effort you noticed"]),
-                    ActionVariant(durationMinutes: 20, steps: ["Try a 2‑step chore", "You're backup"])
+                    TemplateVariant(durationMinutes: 5, steps: ["Set a 30s wait before helping"]),
+                    TemplateVariant(durationMinutes: 10, steps: ["Set 60s wait", "Name one effort you noticed"]),
+                    TemplateVariant(durationMinutes: 20, steps: ["Try a 2‑step chore", "You're backup"])
                 ]
             )
         ],
@@ -31,16 +35,18 @@ enum MockContent {
     )
     
     static let emotionToday = Suggestion(
-        focus: .emotionSkills,
+        focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"),
         headline: "Name your feeling, invite theirs",
         actions: [
             ActionTemplate(
+                id: "A-EMO-LABEL-001",
+                focusId: "emotion_skills",
                 title: "I feel… because…",
                 whyLine: "Models language and safety",
                 variants: [
-                    ActionVariant(durationMinutes: 5, steps: ["You model 'I feel… because…'", "Invite theirs"]),
-                    ActionVariant(durationMinutes: 10, steps: ["Use feelings chart", "Name 1 body clue"]),
-                    ActionVariant(durationMinutes: 20, steps: ["Read short story", "Guess character's feeling together"])
+                    TemplateVariant(durationMinutes: 5, steps: ["You model 'I feel… because…'", "Invite theirs"]),
+                    TemplateVariant(durationMinutes: 10, steps: ["Use feelings chart", "Name 1 body clue"]),
+                    TemplateVariant(durationMinutes: 20, steps: ["Read short story", "Guess character's feeling together"])
                 ]
             )
         ],
@@ -50,52 +56,58 @@ enum MockContent {
     // MARK: - Weekly Summaries
     
     static let independenceWeek = WeeklySummary(
+        id: "independence-week-1",
+        weekStart: Date.now,
+        focusId: "independence",
         winText: "Chose shirt twice without stress",
         hardText: "Timer felt rushed on school mornings",
-        suggestedTweak: .scaleDown
+        suggestedTweak: "scale_down"
     )
     
     static let emotionWeek = WeeklySummary(
+        id: "emotion-week-1",
+        weekStart: Date.now,
+        focusId: "emotion_skills",
         winText: "Child named 'frustrated' twice",
         hardText: "Still hard to name feelings when upset",
-        suggestedTweak: .keep
+        suggestedTweak: "keep"
     )
     
     // MARK: - Monthly Plans
     
     static let independenceMonthly = [
         BuildingBlock(
-            type: .microSkill,
+            type: "microSkill",
             title: "Try first, ask for help after",
-            description: "Wait time invites initiative"
+            desc: "Wait time invites initiative"
         ),
         BuildingBlock(
-            type: .ritual,
+            type: "ritual",
             title: "Weekend outfit choice",
-            description: "Regular practice builds confidence"
+            desc: "Regular practice builds confidence"
         ),
         BuildingBlock(
-            type: .support,
+            type: "support",
             title: "Lay out two options",
-            description: "Structure without control"
+            desc: "Structure without control"
         )
     ]
     
     static let emotionMonthly = [
         BuildingBlock(
-            type: .microSkill,
+            type: "microSkill",
             title: "Name 3 feelings",
-            description: "Build emotional vocabulary"
+            desc: "Build emotional vocabulary"
         ),
         BuildingBlock(
-            type: .ritual,
+            type: "ritual",
             title: "Feelings check‑in at dinner",
-            description: "Regular practice in calm moments"
+            desc: "Regular practice in calm moments"
         ),
         BuildingBlock(
-            type: .support,
+            type: "support",
             title: "Visual chart",
-            description: "Reference tool for naming feelings"
+            desc: "Reference tool for naming feelings"
         )
     ]
     
@@ -118,38 +130,46 @@ enum MockContent {
     // MARK: - Helper Methods
     
     static func suggestion(for focus: FocusArea) -> Suggestion {
-        switch focus {
-        case .independence:
+        switch focus.id {
+        case "independence":
             return independenceToday
-        case .emotionSkills:
+        case "emotion_skills":
             return emotionToday
+        default:
+            return independenceToday
         }
     }
     
     static func weeklySummary(for focus: FocusArea) -> WeeklySummary {
-        switch focus {
-        case .independence:
+        switch focus.id {
+        case "independence":
             return independenceWeek
-        case .emotionSkills:
+        case "emotion_skills":
             return emotionWeek
+        default:
+            return independenceWeek
         }
     }
     
     static func monthlyPlan(for focus: FocusArea) -> [BuildingBlock] {
-        switch focus {
-        case .independence:
+        switch focus.id {
+        case "independence":
             return independenceMonthly
-        case .emotionSkills:
+        case "emotion_skills":
             return emotionMonthly
+        default:
+            return independenceMonthly
         }
     }
     
     static func seasonSummary(for focus: FocusArea) -> SeasonSummary {
-        switch focus {
-        case .independence:
+        switch focus.id {
+        case "independence":
             return independenceSeason
-        case .emotionSkills:
+        case "emotion_skills":
             return emotionSeason
+        default:
+            return independenceSeason
         }
     }
 }

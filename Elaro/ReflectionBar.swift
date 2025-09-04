@@ -1,8 +1,10 @@
 import SwiftUI
 
 struct ReflectionBar: View {
+    let onStatusChange: (String, String?, String?) -> Void
     @State private var selectedDifficulty: DifficultyLevel? = nil
     @State private var note: String = ""
+    @State private var status: String = "pending"
     
     enum DifficultyLevel: String, CaseIterable {
         case light = "light"
@@ -45,12 +47,21 @@ struct ReflectionBar: View {
                         isSelected: selectedDifficulty == difficulty,
                         onTap: {
                             selectedDifficulty = difficulty
-                            print("Selected difficulty: \(difficulty.displayName)")
+                            status = "done"
+                            onStatusChange(status, difficulty.rawValue, note.isEmpty ? nil : note)
                         }
                     )
                 }
                 
                 Spacer()
+                
+                // Skip button
+                Button("Skip") {
+                    status = "skipped"
+                    onStatusChange(status, nil, note.isEmpty ? nil : note)
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
             }
             
             // Optional note field
@@ -59,6 +70,11 @@ struct ReflectionBar: View {
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(2...4)
                     .font(.caption)
+                    .onChange(of: note) {
+                        if status == "done" {
+                            onStatusChange(status, selectedDifficulty?.rawValue, note.isEmpty ? nil : note)
+                        }
+                    }
             }
         }
     }
@@ -95,7 +111,7 @@ struct DifficultyButton: View {
 
 #Preview {
     VStack(spacing: 16) {
-        ReflectionBar()
+        ReflectionBar(onStatusChange: { _, _, _ in })
     }
     .padding()
 }

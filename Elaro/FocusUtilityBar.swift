@@ -13,15 +13,15 @@ struct FocusUtilityBar: View {
             
             // Focus Pills (max 2)
             HStack(spacing: 8) {
-                ForEach(FocusArea.allCases.prefix(2), id: \.id) { focus in
+                ForEach(getFocusAreas().prefix(2), id: \.id) { focus in
                     FocusPill(
                         focus: focus,
-                        isSelected: selectedFocus == focus,
+                        isSelected: selectedFocus.id == focus.id,
                         onTap: {
                             selectedFocus = focus
                         },
                         onLongPress: {
-                            print("Jump to Monthly Plan for \(focus.displayName)")
+                            print("Jump to Monthly Plan for \(focus.name)")
                             depth = .month
                         }
                     )
@@ -36,6 +36,13 @@ struct FocusUtilityBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(.ultraThinMaterial)
+    }
+    
+    private func getFocusAreas() -> [FocusArea] {
+        return [
+            FocusArea(id: "independence", name: "Independence"),
+            FocusArea(id: "emotion_skills", name: "Emotion Skills")
+        ]
     }
 }
 
@@ -81,7 +88,7 @@ struct FocusPill: View {
     
     var body: some View {
         Button(action: onTap) {
-            Text(focus.displayName)
+            Text(focus.name)
                 .font(.caption)
                 .fontWeight(.medium)
                 .padding(.horizontal, 12)
@@ -100,7 +107,7 @@ struct FocusPill: View {
         .onLongPressGesture {
             onLongPress()
         }
-        .accessibilityLabel("Focus: \(focus.displayName)")
+        .accessibilityLabel("Focus: \(focus.name)")
         .accessibilityHint(isSelected ? "Selected focus area" : "Tap to select focus area")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -130,13 +137,13 @@ struct BellButton: View {
 #Preview {
     VStack(spacing: 20) {
         FocusUtilityBar(
-            selectedFocus: .constant(.independence),
-            depth: .constant(.today)
+            selectedFocus: Binding.constant(FocusArea(id: "independence", name: "Independence")),
+            depth: Binding.constant(.today)
         )
         
         FocusUtilityBar(
-            selectedFocus: .constant(.emotionSkills),
-            depth: .constant(.week)
+            selectedFocus: Binding.constant(FocusArea(id: "emotion_skills", name: "Emotion Skills")),
+            depth: Binding.constant(.week)
         )
     }
     .padding()

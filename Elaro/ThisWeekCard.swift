@@ -2,31 +2,81 @@ import SwiftUI
 
 struct ThisWeekCard: View {
     let focus: FocusArea
+    let engines: FocusEngineContainer?
     
-    private var weeklySummary: WeeklySummary {
-        MockContent.weeklySummary(for: focus)
-    }
+    @State private var weeklyAnalysis: WeeklyAnalysis?
+    @State private var isLoading = true
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Header
-            Text("This Week in \(focus.displayName)")
+            Text("This Week in \(focus.name)")
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            // Win • What's Hard • Suggested Tweak
-            WinHardTweakView(weeklySummary: weeklySummary)
-            
-            // Mini-ritual cadence picker
-            MiniRitualPicker()
+            if isLoading {
+                ProgressView("Analyzing week...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let analysis = weeklyAnalysis {
+                // Win • What's Hard • Suggested Tweak
+                WinHardTweakView(analysis: analysis, engines: engines)
+                
+                // Mini-ritual cadence picker
+                MiniRitualPicker()
+            } else {
+                VStack(spacing: 16) {
+                    Text("No data for this week")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("Complete some actions to see your weekly summary")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             
             Spacer(minLength: 0)
         }
+        .onAppear {
+            loadWeeklyAnalysis()
+        }
+        .onChange(of: focus) {
+            loadWeeklyAnalysis()
+        }
+    }
+    
+    private func loadWeeklyAnalysis() {
+        guard let engines = engines else { return }
+        
+        isLoading = true
+        DispatchQueue.main.async {
+            let weekStart = getCurrentWeekStart()
+            let analysis = engines.weeklyAdjuster.analyzeWeek(for: focus.id, weekStart: weekStart)
+            self.weeklyAnalysis = analysis
+            self.isLoading = false
+        }
+    }
+    
+    private func getCurrentWeekStart() -> Date {
+        let calendar = Calendar.current
+        let now = Date.now
+        let weekOfYear = calendar.component(.weekOfYear, from: now)
+        let year = calendar.component(.year, from: now)
+        
+        var components = DateComponents()
+        components.weekOfYear = weekOfYear
+        components.yearForWeekOfYear = year
+        components.weekday = calendar.firstWeekday
+        
+        return calendar.date(from: components) ?? now
     }
 }
 
 struct WinHardTweakView: View {
-    let weeklySummary: WeeklySummary
+    let analysis: WeeklyAnalysis
+    let engines: FocusEngineContainer?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -40,7 +90,7 @@ struct WinHardTweakView: View {
                         .fontWeight(.semibold)
                 }
                 
-                Text(weeklySummary.winText)
+                Text(analysis.winText)
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
@@ -57,7 +107,7 @@ struct WinHardTweakView: View {
                         .fontWeight(.semibold)
                 }
                 
-                Text(weeklySummary.hardText)
+                Text(analysis.hardText)
                     .font(.body)
                     .foregroundStyle(.secondary)
             }
@@ -70,23 +120,34 @@ struct WinHardTweakView: View {
                     .font(.headline)
                     .fontWeight(.semibold)
                 
+                Text(analysis.rationale)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+                
                 HStack(spacing: 12) {
                     TweakButton(
                         title: "Keep",
-                        isSelected: weeklySummary.suggestedTweak == .keep,
-                        onTap: { print("Keep selected") }
+                        isSelected: analysis.suggestedTweak == .keep,
+                        onTap: { 
+                            engines?.weeklyAdjuster.applyTweak(.keep, for: analysis.focusId)
+                        }
                     )
                     
                     TweakButton(
                         title: "Scale down",
-                        isSelected: weeklySummary.suggestedTweak == .scaleDown,
-                        onTap: { print("Scale down selected") }
+                        isSelected: analysis.suggestedTweak == .scaleDown,
+                        onTap: { 
+                            engines?.weeklyAdjuster.applyTweak(.scaleDown, for: analysis.focusId)
+                        }
                     )
                     
                     TweakButton(
                         title: "Scale up",
-                        isSelected: weeklySummary.suggestedTweak == .scaleUp,
-                        onTap: { print("Scale up selected") }
+                        isSelected: analysis.suggestedTweak == .scaleUp,
+                        onTap: { 
+                            engines?.weeklyAdjuster.applyTweak(.scaleUp, for: analysis.focusId)
+                        }
                     )
                 }
             }
@@ -181,9 +242,9 @@ struct MiniRitualPicker: View {
 }
 
 #Preview("Independence") {
-    ThisWeekCard(focus: .independence)
+    ThisWeekCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    ThisWeekCard(focus: .emotionSkills)
+    ThisWeekCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
 }

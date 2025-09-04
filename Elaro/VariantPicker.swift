@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct VariantPicker: View {
-    let variants: [ActionVariant]
+    let variants: [TemplateVariant]
     let selectedIndex: Int
     let onSelectionChange: (Int) -> Void
     
@@ -28,7 +28,7 @@ struct VariantPicker: View {
 }
 
 struct VariantButton: View {
-    let variant: ActionVariant
+    let variant: TemplateVariant
     let isSelected: Bool
     let onTap: () -> Void
     

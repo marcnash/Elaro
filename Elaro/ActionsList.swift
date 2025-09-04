@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ActionsList: View {
     let actions: [ActionTemplate]
-    @State private var selectedVariants: [UUID: Int] = [:]
+    let engines: FocusEngineContainer?
+    let focusId: String
+    @State private var selectedVariants: [String: Int] = [:]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -12,10 +14,33 @@ struct ActionsList: View {
                     selectedVariantIndex: selectedVariants[action.id] ?? 0,
                     onVariantChange: { index in
                         selectedVariants[action.id] = index
+                    },
+                    onStatusChange: { status, difficulty, note in
+                        saveActionInstance(action: action, status: status, difficulty: difficulty, note: note)
                     }
                 )
             }
         }
+    }
+    
+    private func saveActionInstance(action: ActionTemplate, status: String, difficulty: String?, note: String?) {
+        guard let engines = engines else { return }
+        
+        let selectedVariantIndex = selectedVariants[action.id] ?? 0
+        let variant = action.variants[selectedVariantIndex]
+        
+        let instance = ActionInstance(
+            id: UUID().uuidString,
+            date: Date.now,
+            focusId: focusId,
+            templateId: action.id,
+            variantDuration: variant.durationMinutes,
+            status: status,
+            feltDifficulty: difficulty,
+            note: note
+        )
+        
+        engines.store.save(instance: instance)
     }
 }
 
@@ -23,6 +48,7 @@ struct ActionRow: View {
     let action: ActionTemplate
     let selectedVariantIndex: Int
     let onVariantChange: (Int) -> Void
+    let onStatusChange: (String, String?, String?) -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -42,7 +68,7 @@ struct ActionRow: View {
             )
             
             // Reflection Bar
-            ReflectionBar()
+            ReflectionBar(onStatusChange: onStatusChange)
         }
         .padding(16)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
@@ -67,7 +93,7 @@ struct RationaleLine: View {
 
 #Preview {
     VStack(spacing: 16) {
-        ActionsList(actions: MockContent.independenceToday.actions)
+        ActionsList(actions: MockContent.independenceToday.actions, engines: nil, focusId: "independence")
     }
     .padding()
 }
