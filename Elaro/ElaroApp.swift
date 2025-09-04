@@ -39,21 +39,6 @@ struct ElaroApp: App {
 
 struct RootView: View {
     var body: some View {
-        TabView {
-            ChecklistScreen()
-                .tabItem { Label("Checklist", systemImage: "checklist") }
-
-            ProgressOverviewScreen()
-                .tabItem { Label("Overview", systemImage: "chart.pie.fill") }
-
-            WeeklySummaryScreen()
-                .tabItem { Label("Summary", systemImage: "list.bullet.rectangle") }
-
-            ResourcesScreen()
-                .tabItem { Label("Resources", systemImage: "book") }
-
-            SettingsScreen()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-        }
+        RootTabs()
     }
 }

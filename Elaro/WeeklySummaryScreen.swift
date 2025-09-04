@@ -93,7 +93,7 @@ struct WeeklySummaryScreen: View {
 
             DatePicker("", selection: $weekOf, displayedComponents: .date)
                 .labelsHidden()
-                .onChange(of: weekOf) { _ in /* Query already filters by init; simple view recompute is fine */ }
+                .onChange(of: weekOf) { /* Query already filters by init; simple view recompute is fine */ }
         }
         .padding(.horizontal)
     }
