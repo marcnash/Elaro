@@ -1,0 +1,37 @@
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "title": "Put toys away",
+    "ageMin": 2,
+    "ageMax": 4,
+    "category": "home",
+    "rationale": "Builds responsibility & routines.",
+    "tips": [
+      "Model first, then hand over.",
+      "Use a single bin; avoid sorting at start."
+    ]
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000002",
+    "title": "Set and clear the table",
+    "ageMin": 4,
+    "ageMax": 7,
+    "category": "home",
+    "rationale": "Introduces contribution to family routines.",
+    "tips": [
+      "Assign the same role daily for a week.",
+      "Step back once consistent."
+    ]
+  },
+  {
+    "id": "00000000-0000-0000-0000-000000000003",
+    "title": "Do laundry end-to-end",
+    "ageMin": 9,
+    "ageMax": 12,
+    "category": "lifeSkills",
+    "rationale": "Multi-step planning & follow-through.",
+    "tips": [
+      "Week 1: sort together; Week 2: child runs washer; Week 3: fold solo."
+    ]
+  }
+]
