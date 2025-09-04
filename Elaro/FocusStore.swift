@@ -57,6 +57,7 @@ class FocusStore {
         }
     }
     
+    @MainActor
     func save(instance: ActionInstance) {
         do {
             modelContext.insert(instance)
@@ -83,6 +84,7 @@ class FocusStore {
         }
     }
     
+    @MainActor
     func save(summary: WeeklySummary) {
         do {
             modelContext.insert(summary)
@@ -130,6 +132,7 @@ class FocusStore {
         }
     }
     
+    @MainActor
     func upsert(focus: FocusArea) {
         do {
             // Check if focus already exists
@@ -152,6 +155,7 @@ class FocusStore {
     
     // MARK: - Building Blocks
     
+    @MainActor
     func updateBuildingBlocks(for focusId: String, blocks: [BuildingBlock]) {
         guard let focus = focus(by: focusId) else {
             print("Focus not found: \(focusId)")
@@ -166,6 +170,7 @@ class FocusStore {
         }
     }
     
+    @MainActor
     func updatePinnedMicroSkills(for focusId: String, pinnedTitles: [String]) {
         guard let focus = focus(by: focusId) else {
             print("Focus not found: \(focusId)")

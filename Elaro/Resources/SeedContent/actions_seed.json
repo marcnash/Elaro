@@ -32,14 +32,14 @@
     {
       "id": "A-IND-SEQUENCE-001",
       "focusId": "independence",
-      "title": "Simple 2-step sequence",
-      "whyLine": "Sequential thinking builds executive function",
-      "tags": ["sequencing", "executive_function"],
+      "title": "Simple sequence practice",
+      "whyLine": "Sequential thinking builds planning skills",
+      "tags": ["sequencing", "planning"],
       "difficulty": 2,
       "variants": [
-        { "durationMinutes": 5,  "steps": ["Brush teeth", "Put on pajamas"] },
-        { "durationMinutes": 10, "steps": ["Get backpack", "Put homework inside"] },
-        { "durationMinutes": 20, "steps": ["Set table", "Clear dishes after"] }
+        { "durationMinutes": 5,  "steps": ["Pick 2-step task", "Do together"] },
+        { "durationMinutes": 10, "steps": ["Pick 3-step task", "Guide first step", "Let them continue"] },
+        { "durationMinutes": 20, "steps": ["Pick 4-step task", "Write steps down", "They follow list"] }
       ],
       "contraindications": ["skip_if_dysregulated"]
     },
@@ -60,28 +60,28 @@
     {
       "id": "A-EMO-CO-REG-001",
       "focusId": "emotion_skills",
-      "title": "Co-regulate with breathing",
+      "title": "Co-regulation breathing",
       "whyLine": "Shared calm creates safety",
       "tags": ["co_regulation", "calming"],
-      "difficulty": 2,
+      "difficulty": 1,
       "variants": [
         { "durationMinutes": 5,  "steps": ["Breathe together for 3 breaths"] },
-        { "durationMinutes": 10, "steps": ["Count to 5 together", "Notice what you feel"] },
-        { "durationMinutes": 20, "steps": ["Gentle movement", "Name 3 things you see"] }
+        { "durationMinutes": 10, "steps": ["Breathe together", "Name what you feel"] },
+        { "durationMinutes": 20, "steps": ["Breathe together", "Share calming strategy", "Practice it"] }
       ],
       "contraindications": ["skip_if_dysregulated"]
     },
     {
       "id": "A-EMO-REPAIR-001",
       "focusId": "emotion_skills",
-      "title": "Simple repair script",
-      "whyLine": "Repair builds trust and resilience",
+      "title": "Repair script practice",
+      "whyLine": "Repair builds trust and connection",
       "tags": ["repair", "connection"],
       "difficulty": 3,
       "variants": [
-        { "durationMinutes": 5,  "steps": ["I'm sorry that happened", "What do you need?"] },
-        { "durationMinutes": 10, "steps": ["I see you're upset", "Let's try again together"] },
-        { "durationMinutes": 20, "steps": ["That was hard for both of us", "What can we do differently?"] }
+        { "durationMinutes": 5,  "steps": ["Model simple apology", "Practice together"] },
+        { "durationMinutes": 10, "steps": ["Model full repair", "Practice with role play"] },
+        { "durationMinutes": 20, "steps": ["Model full repair", "Practice with real situation", "Reflect together"] }
       ],
       "contraindications": ["skip_if_dysregulated"]
     }

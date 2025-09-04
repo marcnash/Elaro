@@ -10,19 +10,24 @@ import SwiftData
 
 @main
 struct ElaroApp: App {
+    var container: ModelContainer = {
+        let schema = Schema([
+            FocusArea.self, BuildingBlock.self, ActionTemplate.self,
+            TemplateVariant.self, ActionInstance.self, WeeklySummary.self
+        ])
+        let config = ModelConfiguration(schema: schema)
+        return try! ModelContainer(for: schema, configurations: [config])
+    }()
+
     var body: some Scene {
         WindowGroup {
             RootView()
-                .modelContainer(for: [FocusArea.self, BuildingBlock.self, ActionTemplate.self,
-                                      TemplateVariant.self, ActionInstance.self, WeeklySummary.self])
-                .task {
-                    // Seed on first run
-                    if let container = try? ModelContainer(for: FocusArea.self, BuildingBlock.self, ActionTemplate.self,
-                                                         TemplateVariant.self, ActionInstance.self, WeeklySummary.self) {
-                        let ctx = ModelContext(container)
-                        await SeedImporter.run(modelContext: ctx)
-                    }
-                }
+        }
+        .modelContainer(container)
+        .task {
+            // Seed on first run
+            let ctx = ModelContext(container)
+            await SeedImporter.run(modelContext: ctx)
         }
     }
 }

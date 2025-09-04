@@ -8,7 +8,7 @@ import Foundation
     var name: String
     var active: Bool
     var startedAt: Date
-    var buildingBlocks: [BuildingBlock] // exactly 3 when configured
+    @Relationship(deleteRule: .cascade) var buildingBlocks: [BuildingBlock] = [] // exactly 3 when configured
     var pinnedMicroSkillTitles: [String] // influence recommender
     
     init(id: String, name: String, active: Bool = true, startedAt: Date = Date.now, buildingBlocks: [BuildingBlock] = [], pinnedMicroSkillTitles: [String] = []) {
@@ -42,7 +42,7 @@ import Foundation
     var whyLine: String
     var tags: [String]
     var difficulty: Int // 1..5
-    var variants: [TemplateVariant]
+    @Relationship(deleteRule: .cascade) var variants: [TemplateVariant] = []
     var contraindications: [String]
     var contentVersion: Int
     
