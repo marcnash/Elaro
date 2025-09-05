@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FocusUtilityBar: View {
-    @Binding var selectedFocus: FocusArea
+    @Binding var selectedFocus: FocusKey
     @Binding var depth: FocusDepth
     
     var body: some View {
@@ -13,7 +13,7 @@ struct FocusUtilityBar: View {
             
             // Focus Pills (max 2)
             HStack(spacing: 8) {
-                ForEach(getFocusAreas().prefix(2), id: \.id) { focus in
+                ForEach(getFocusKeys().prefix(2), id: \.id) { focus in
                     FocusPill(
                         focus: focus,
                         isSelected: selectedFocus.id == focus.id,
@@ -21,7 +21,7 @@ struct FocusUtilityBar: View {
                             selectedFocus = focus
                         },
                         onLongPress: {
-                            print("Jump to Monthly Plan for \(focus.name)")
+                            print("Jump to Monthly Plan for \(focus.displayName)")
                             depth = .month
                         }
                     )
@@ -38,11 +38,8 @@ struct FocusUtilityBar: View {
         .background(.ultraThinMaterial)
     }
     
-    private func getFocusAreas() -> [FocusArea] {
-        return [
-            FocusArea(id: "independence", name: "Independence"),
-            FocusArea(id: "emotion_skills", name: "Emotion Skills")
-        ]
+    private func getFocusKeys() -> [FocusKey] {
+        return FocusKey.allCases
     }
 }
 
@@ -81,14 +78,14 @@ struct ChildChip: View {
 // MARK: - Focus Pill
 
 struct FocusPill: View {
-    let focus: FocusArea
+    let focus: FocusKey
     let isSelected: Bool
     let onTap: () -> Void
     let onLongPress: () -> Void
     
     var body: some View {
         Button(action: onTap) {
-            Text(focus.name)
+            Text(focus.displayName)
                 .font(.caption)
                 .fontWeight(.medium)
                 .padding(.horizontal, 12)
@@ -107,7 +104,7 @@ struct FocusPill: View {
         .onLongPressGesture {
             onLongPress()
         }
-        .accessibilityLabel("Focus: \(focus.name)")
+        .accessibilityLabel("Focus: \(focus.displayName)")
         .accessibilityHint(isSelected ? "Selected focus area" : "Tap to select focus area")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -137,12 +134,12 @@ struct BellButton: View {
 #Preview {
     VStack(spacing: 20) {
         FocusUtilityBar(
-            selectedFocus: Binding.constant(FocusArea(id: "independence", name: "Independence")),
+            selectedFocus: Binding.constant(.independence),
             depth: Binding.constant(.today)
         )
         
         FocusUtilityBar(
-            selectedFocus: Binding.constant(FocusArea(id: "emotion_skills", name: "Emotion Skills")),
+            selectedFocus: Binding.constant(.emotionSkills),
             depth: Binding.constant(.week)
         )
     }

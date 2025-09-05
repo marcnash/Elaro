@@ -169,9 +169,9 @@ struct NextSeasonPreview: View {
 }
 
 #Preview("Independence") {
-    SeasonCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
+    SeasonCard(focus: FocusArea(id: FocusKey.independence.rawValue, name: FocusKey.independence.displayName), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    SeasonCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
+    SeasonCard(focus: FocusArea(id: FocusKey.emotionSkills.rawValue, name: FocusKey.emotionSkills.displayName), engines: nil)
 }

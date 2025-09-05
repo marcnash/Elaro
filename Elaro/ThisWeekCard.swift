@@ -242,9 +242,9 @@ struct MiniRitualPicker: View {
 }
 
 #Preview("Independence") {
-    ThisWeekCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
+    ThisWeekCard(focus: FocusArea(id: FocusKey.independence.rawValue, name: FocusKey.independence.displayName), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    ThisWeekCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
+    ThisWeekCard(focus: FocusArea(id: FocusKey.emotionSkills.rawValue, name: FocusKey.emotionSkills.displayName), engines: nil)
 }

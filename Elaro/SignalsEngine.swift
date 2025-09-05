@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct SignalsEngine {
     private let store: FocusStore
     

@@ -5,7 +5,7 @@ enum MockContent {
     // MARK: - Today Suggestions
     
     static let independenceToday = Suggestion(
-        focus: FocusArea(id: "independence", name: "Independence"),
+        focus: FocusArea(id: FocusKey.independence.rawValue, name: FocusKey.independence.displayName),
         headline: "You pick the plan; I'm backup",
         actions: [
             ActionTemplate(
@@ -35,7 +35,7 @@ enum MockContent {
     )
     
     static let emotionToday = Suggestion(
-        focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"),
+        focus: FocusArea(id: FocusKey.emotionSkills.rawValue, name: FocusKey.emotionSkills.displayName),
         headline: "Name your feeling, invite theirs",
         actions: [
             ActionTemplate(

@@ -1,6 +1,8 @@
 import Foundation
+import SwiftData
 
-struct FocusPlanner {
+@MainActor
+final class FocusPlanner {
     private let store: FocusStore
     
     init(store: FocusStore) {

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct RecommenderEngine {
     private let store: FocusStore
     private let signals: SignalsEngine
@@ -35,17 +36,12 @@ struct RecommenderEngine {
         // Create suggestions
         var suggestions: [Suggestion] = []
         
-        let explainWhy = buildExplainWhy(
-            actions: topActions.map { $0.action },
-            successRates: successRates,
-            bandwidthPreference: bandwidthPreference,
-            timeOfDayHeatmap: timeOfDayHeatmap
-        )
+        let explainWhy = generateExplainWhy(for: topActions.first?.0 ?? filteredActions.first!, focus: focus, score: topActions.first?.1 ?? 0.5)
         
         let suggestion = Suggestion(
-            focus: FocusArea(id: focusId, name: focusId.capitalized),
-            headline: "Try this today for \(focusId.capitalized)",
-            actions: topActions.map { $0.action },
+            focus: focus,
+            headline: generateHeadline(for: topActions.first?.0 ?? filteredActions.first!, focus: focus),
+            actions: topActions.map { $0.0 },
             explainWhy: explainWhy
         )
         

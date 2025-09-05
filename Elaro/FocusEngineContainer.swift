@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 @Observable
+@MainActor
 class FocusEngineContainer {
     let store: FocusStore
     let signals: SignalsEngine

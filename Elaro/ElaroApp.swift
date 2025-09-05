@@ -22,13 +22,13 @@ struct ElaroApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .task {
+                    // Seed on first run
+                    let ctx = ModelContext(container)
+                    await SeedImporter.run(modelContext: ctx)
+                }
         }
         .modelContainer(container)
-        .task {
-            // Seed on first run
-            let ctx = ModelContext(container)
-            await SeedImporter.run(modelContext: ctx)
-        }
     }
 }
 

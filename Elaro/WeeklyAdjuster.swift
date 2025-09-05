@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 struct WeeklyAdjuster {
     private let store: FocusStore
     private let signals: SignalsEngine

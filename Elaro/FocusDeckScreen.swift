@@ -2,7 +2,7 @@ import SwiftUI
 
 struct FocusDeckScreen: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var selectedFocus: FocusArea = FocusArea(id: "independence", name: "Independence")
+    @State private var selectedFocus: FocusKey = .independence
     @State private var depth: FocusDepth? = .today
     @State private var engines: FocusEngineContainer?
     
@@ -24,13 +24,13 @@ struct FocusDeckScreen: View {
                             CardContainer {
                                 switch focusDepth {
                                 case .today:
-                                    TodayCard(focus: selectedFocus, engines: engines)
+                                    TodayCard(focus: focusAreaFor(selectedFocus), engines: engines)
                                 case .week:
-                                    ThisWeekCard(focus: selectedFocus, engines: engines)
+                                    ThisWeekCard(focus: focusAreaFor(selectedFocus), engines: engines)
                                 case .month:
-                                    MonthlyPlanCard(focus: selectedFocus, engines: engines)
+                                    MonthlyPlanCard(focus: focusAreaFor(selectedFocus), engines: engines)
                                 case .season:
-                                    SeasonCard(focus: selectedFocus, engines: engines)
+                                    SeasonCard(focus: focusAreaFor(selectedFocus), engines: engines)
                                 }
                             }
                             .frame(width: UIScreen.main.bounds.width)
@@ -49,6 +49,19 @@ struct FocusDeckScreen: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func focusAreaFor(_ focusKey: FocusKey) -> FocusArea {
+        return FocusArea(
+            id: focusKey.rawValue,
+            name: focusKey.displayName,
+            active: true,
+            startedAt: Date.now,
+            buildingBlocks: [],
+            pinnedMicroSkillTitles: []
+        )
     }
 }
 

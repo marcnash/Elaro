@@ -159,9 +159,9 @@ struct BoundaryChip: View {
 }
 
 #Preview("Independence") {
-    MonthlyPlanCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
+    MonthlyPlanCard(focus: FocusArea(id: FocusKey.independence.rawValue, name: FocusKey.independence.displayName), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    MonthlyPlanCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
+    MonthlyPlanCard(focus: FocusArea(id: FocusKey.emotionSkills.rawValue, name: FocusKey.emotionSkills.displayName), engines: nil)
 }

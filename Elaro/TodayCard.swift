@@ -63,9 +63,9 @@ struct TodayCard: View {
 }
 
 #Preview("Independence") {
-    TodayCard(focus: FocusArea(id: "independence", name: "Independence"), engines: nil)
+    TodayCard(focus: FocusArea(id: FocusKey.independence.rawValue, name: FocusKey.independence.displayName), engines: nil)
 }
 
 #Preview("Emotion Skills") {
-    TodayCard(focus: FocusArea(id: "emotion_skills", name: "Emotion Skills"), engines: nil)
+    TodayCard(focus: FocusArea(id: FocusKey.emotionSkills.rawValue, name: FocusKey.emotionSkills.displayName), engines: nil)
 }
