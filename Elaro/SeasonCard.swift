@@ -4,7 +4,7 @@ struct SeasonCard: View {
     let focus: FocusArea
     let engines: FocusEngineContainer?
     
-    @State private var storyText: String = ""
+    @Environment(\.modelContext) private var context
     @State private var seasonSummary: SeasonSummary?
     @State private var isLoading = true
     
@@ -61,7 +61,10 @@ struct SeasonCard: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                     
-                    TextEditor(text: $storyText)
+                    TextEditor(text: Binding(
+                        get: { focus.seasonNote ?? "" },
+                        set: { focus.seasonNote = $0; try? context.save() }
+                    ))
                         .font(.body)
                         .frame(minHeight: 80)
                         .padding(8)
@@ -103,8 +106,6 @@ struct SeasonCard: View {
     }
     
     private func loadSeasonSummary() {
-        guard let engines = engines else { return }
-        
         isLoading = true
         DispatchQueue.main.async {
             // For now, use mock data. In a real implementation, this would

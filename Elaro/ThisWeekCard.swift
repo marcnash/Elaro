@@ -19,7 +19,14 @@ struct ThisWeekCard: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let analysis = weeklyAnalysis {
                 // Win • What's Hard • Suggested Tweak
-                WinHardTweakView(analysis: analysis, engines: engines)
+                WinHardTweakView(
+                    win: analysis.winText,
+                    hard: analysis.hardText,
+                    suggestion: analysis.suggestedTweak.displayName,
+                    onDecision: { decision in
+                        engines?.weeklyAdjuster.applyTweak(decision, for: analysis.focusId)
+                    }
+                )
                 
                 // Mini-ritual cadence picker
                 MiniRitualPicker()
@@ -74,86 +81,6 @@ struct ThisWeekCard: View {
     }
 }
 
-struct WinHardTweakView: View {
-    let analysis: WeeklyAnalysis
-    let engines: FocusEngineContainer?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Win
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text("Win")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                }
-                
-                Text(analysis.winText)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(16)
-            .background(.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-            
-            // What's Hard
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                    Text("What's Hard")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                }
-                
-                Text(analysis.hardText)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(16)
-            .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-            
-            // Suggested Tweak
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Suggested tweak:")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text(analysis.rationale)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
-                
-                HStack(spacing: 12) {
-                    TweakButton(
-                        title: "Keep",
-                        isSelected: analysis.suggestedTweak == .keep,
-                        onTap: { 
-                            engines?.weeklyAdjuster.applyTweak(.keep, for: analysis.focusId)
-                        }
-                    )
-                    
-                    TweakButton(
-                        title: "Scale down",
-                        isSelected: analysis.suggestedTweak == .scaleDown,
-                        onTap: { 
-                            engines?.weeklyAdjuster.applyTweak(.scaleDown, for: analysis.focusId)
-                        }
-                    )
-                    
-                    TweakButton(
-                        title: "Scale up",
-                        isSelected: analysis.suggestedTweak == .scaleUp,
-                        onTap: { 
-                            engines?.weeklyAdjuster.applyTweak(.scaleUp, for: analysis.focusId)
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
 
 struct TweakButton: View {
     let title: String

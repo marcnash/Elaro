@@ -4,7 +4,7 @@ struct TodayCard: View {
     let focus: FocusArea
     let engines: FocusEngineContainer?
     
-    @State private var suggestions: [Suggestion] = []
+    @State private var suggestions: [RankedSuggestion] = []
     @State private var isLoading = true
     
     var body: some View {
@@ -35,7 +35,7 @@ struct TodayCard: View {
                 ActionsList(actions: suggestions.flatMap { $0.actions }, engines: engines, focusId: focus.id)
                 
                 // Explain Why Footer
-                if let explainWhy = suggestions.first?.explainWhy {
+                if let explainWhy = suggestions.first?.whySummary {
                     ExplainWhyFooter(explainWhy: explainWhy)
                 }
                 

@@ -1,212 +1,110 @@
 import Foundation
+import SwiftData
+
+struct RankedSuggestion: Identifiable {
+    let id = UUID()
+    let headline: String
+    let actions: [ActionTemplate]        // 1–3 templates
+    let chosenVariants: [Int: Int]       // templateIndex : durationMinutes
+    let whySummary: String
+}
 
 @MainActor
-struct RecommenderEngine {
+final class RecommenderEngine {
     private let store: FocusStore
     private let signals: SignalsEngine
+    private let explain: ExplainWhyBuilder
     
-    init(store: FocusStore) {
+    init(store: FocusStore, signals: SignalsEngine, explain: ExplainWhyBuilder) {
         self.store = store
-        self.signals = SignalsEngine(store: store)
+        self.signals = signals
+        self.explain = explain
     }
     
     // MARK: - Main Recommendation Method
     
-    func rank(for focusId: String, day: Date) -> [Suggestion] {
-        let actions = store.actions(for: focusId)
-        guard let focus = store.focus(by: focusId) else {
-            return []
+    func rank(for focusId: String, day: Date = .now) -> [RankedSuggestion] {
+        let candidates = store.actions(for: focusId)
+        guard !candidates.isEmpty else {
+            return [] // nothing in seed for this focus; UI can show an empty state
         }
-        
-        // Filter out contraindicated actions
-        let filteredActions = filterContraindicatedActions(actions, focusId: focusId)
-        
-        // Score each action
-        var scoredActions: [(ActionTemplate, Double)] = []
-        
-        for action in filteredActions {
-            let score = calculateScore(for: action, focus: focus, day: day)
-            scoredActions.append((action, score))
+
+        // Signals with safe defaults
+        let successRateByTag = signals.computeSuccessRateByTag(focusId: focusId)
+        let preferred = [5,10,20].contains(signals.computeBandwidthPreference(focusId: focusId))
+            ? signals.computeBandwidthPreference(focusId: focusId) : 5
+        let heatmap = signals.computeTimeOfDayHeatmap()
+        let hour = Calendar.current.component(.hour, from: day)
+        let hourFit = heatmap[hour] ?? 0.5
+        let noveltyTol = signals.computeNoveltyTolerance(focusId: focusId)
+        let noveltyOK = (noveltyTol == "med" || noveltyTol == "high")
+        let friction = signals.computeFrictionIndex(focusId: focusId)
+        let pinned = store.focus(by: focusId)?.pinnedMicroSkillTitles ?? []
+
+        struct Scored { let tpl: ActionTemplate; let score: Double }
+        let scored: [Scored] = candidates.map { tpl in
+            let focusMatch = scoreFocusMatch(template: tpl, pinned: pinned)
+            let successProb = tpl.tags.map { successRateByTag[$0] ?? 0.5 }.average(or: 0.5)
+            let bandwidthFit = tpl.variants.contains { $0.durationMinutes == preferred } ? 1.0 : 0.5
+            let noveltyBoost = noveltyOK ? 0.2 : 0.0
+            let frictionRisk = min(max(friction, 0), 1)
+            let s = 0.35*focusMatch + 0.20*successProb + 0.15*bandwidthFit + 0.10*hourFit + 0.10*noveltyBoost + 0.10*1.0 - 0.10*frictionRisk
+            return .init(tpl: tpl, score: s)
+        }.sorted { $0.score > $1.score }
+
+        // ✅ Fallbacks to guarantee output
+        let chosenTemplates: [ActionTemplate]
+        if scored.isEmpty {
+            // should never happen because candidates non‑empty, but be safe
+            chosenTemplates = Array(candidates.prefix(2))
+        } else {
+            chosenTemplates = Array(scored.prefix(max(2, min(3, scored.count)))).map { $0.tpl }
         }
-        
-        // Sort by score and take top 2-3
-        scoredActions.sort { $0.1 > $1.1 }
-        let topActions = Array(scoredActions.prefix(3))
-        
-        // Create suggestions
-        var suggestions: [Suggestion] = []
-        
-        let explainWhy = generateExplainWhy(for: topActions.first?.0 ?? filteredActions.first!, focus: focus, score: topActions.first?.1 ?? 0.5)
-        
-        let suggestion = Suggestion(
-            focus: focus,
-            headline: generateHeadline(for: topActions.first?.0 ?? filteredActions.first!, focus: focus),
-            actions: topActions.map { $0.0 },
-            explainWhy: explainWhy
+
+        // choose variants per template
+        var chosenVariants: [Int:Int] = [:]
+        for (idx, tpl) in chosenTemplates.enumerated() {
+            let durations = tpl.variants.map { $0.durationMinutes }
+            chosenVariants[idx] = durations.contains(preferred) ? preferred : (durations.first ?? 5)
+        }
+
+        let why = explain.build(
+            focusId: focusId,
+            preferredDuration: chosenVariants.mode(defaultValue: preferred),
+            hour: hour,
+            frictionIndex: friction
         )
-        
-        return [suggestion]
-    }
-    
-    // MARK: - Scoring Algorithm
-    
-    private func calculateScore(for action: ActionTemplate, focus: FocusArea, day: Date) -> Double {
-        let focusMatch = calculateFocusMatch(action: action, focus: focus)
-        let successProbability = calculateSuccessProbability(action: action, focusId: focus.id)
-        let bandwidthFit = calculateBandwidthFit(action: action, focusId: focus.id)
-        let timeOfDayFit = calculateTimeOfDayFit(action: action, day: day)
-        let noveltyBoost = calculateNoveltyBoost(action: action, focusId: focus.id)
-        let streakMomentum = calculateStreakMomentum(focusId: focus.id)
-        let frictionRisk = calculateFrictionRisk(action: action, focusId: focus.id)
-        
-        let score = 0.35 * focusMatch +
-                   0.20 * successProbability +
-                   0.15 * bandwidthFit +
-                   0.10 * timeOfDayFit +
-                   0.10 * noveltyBoost +
-                   0.10 * streakMomentum -
-                   0.10 * frictionRisk
-        
-        return max(0.0, min(1.0, score)) // Clamp between 0 and 1
-    }
-    
-    // MARK: - Score Components
-    
-    private func calculateFocusMatch(action: ActionTemplate, focus: FocusArea) -> Double {
-        let focusTags = Set(focus.buildingBlocks.flatMap { $0.tags } + focus.pinnedMicroSkillTitles)
-        let actionTags = Set(action.tags)
-        
-        let intersection = focusTags.intersection(actionTags)
-        let union = focusTags.union(actionTags)
-        
-        return union.isEmpty ? 0.0 : Double(intersection.count) / Double(union.count)
-    }
-    
-    private func calculateSuccessProbability(action: ActionTemplate, focusId: String) -> Double {
-        let successRates = signals.computeSuccessRateByTag(focusId: focusId)
-        
-        // Average success rate for action's tags
-        let actionTagRates = action.tags.compactMap { successRates[$0] }
-        return actionTagRates.isEmpty ? 0.5 : actionTagRates.reduce(0, +) / Double(actionTagRates.count)
-    }
-    
-    private func calculateBandwidthFit(action: ActionTemplate, focusId: String) -> Double {
-        let preferredBandwidth = signals.computeBandwidthPreference(focusId: focusId)
-        let actionDurations = action.variants.map { $0.durationMinutes }
-        
-        // Check if preferred duration is available
-        return actionDurations.contains(preferredBandwidth) ? 1.0 : 0.5
-    }
-    
-    private func calculateTimeOfDayFit(action: ActionTemplate, day: Date) -> Double {
-        let currentHour = Calendar.current.component(.hour, from: day)
-        let peakHours = signals.computePeakHours()
-        
-        // Boost if current hour is in peak hours
-        return peakHours.contains(currentHour) ? 1.0 : 0.7
-    }
-    
-    private func calculateNoveltyBoost(action: ActionTemplate, focusId: String) -> Double {
-        let tolerance = signals.computeNoveltyTolerance(focusId: focusId)
-        
-        // Check if this action was recently used
-        let endDate = Date.now
-        let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate) ?? endDate
-        let range = DateInterval(start: startDate, end: endDate)
-        
-        let recentInstances = store.actionInstances(in: range, focusId: focusId)
-        let wasRecentlyUsed = recentInstances.contains { $0.templateId == action.id }
-        
-        switch tolerance {
-        case "high":
-            return wasRecentlyUsed ? 0.3 : 1.0 // Prefer new actions
-        case "med":
-            return wasRecentlyUsed ? 0.6 : 0.8 // Slight preference for new
-        case "low":
-            return wasRecentlyUsed ? 1.0 : 0.4 // Prefer familiar actions
-        default:
-            return 0.7
-        }
-    }
-    
-    private func calculateStreakMomentum(focusId: String) -> Double {
-        return signals.computeStreakMomentum(focusId: focusId)
-    }
-    
-    private func calculateFrictionRisk(action: ActionTemplate, focusId: String) -> Double {
-        let frictionIndex = signals.computeFrictionIndex(focusId: focusId)
-        
-        // Higher difficulty actions have higher friction risk
-        let difficultyRisk = Double(action.difficulty) / 5.0
-        
-        return (frictionIndex + difficultyRisk) / 2.0
+
+        return [RankedSuggestion(
+            headline: headline(for: focusId),
+            actions: chosenTemplates,
+            chosenVariants: chosenVariants,
+            whySummary: why
+        )]
     }
     
     // MARK: - Helper Methods
     
-    private func filterContraindicatedActions(_ actions: [ActionTemplate], focusId: String) -> [ActionTemplate] {
-        // Check for recent dysregulation indicators
-        let endDate = Date.now
-        let startDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate
-        let range = DateInterval(start: startDate, end: endDate)
-        
-        let recentInstances = store.actionInstances(in: range, focusId: focusId)
-        let dysregulationKeywords = ["overwhelmed", "meltdown", "tears", "dysregulated"]
-        
-        let hasRecentDysregulation = recentInstances.contains { instance in
-            guard let note = instance.note?.lowercased() else { return false }
-            return dysregulationKeywords.contains { note.contains($0) }
+    private func headline(for focusId: String) -> String {
+        switch focusId {
+        case "independence":   return "You pick the plan; I'm backup"
+        case "emotion_skills": return "Name your feeling, invite theirs"
+        default:               return "Try this today…"
         }
-        
-        if hasRecentDysregulation {
-            return actions.filter { !$0.contraindications.contains("skip_if_dysregulated") }
-        }
-        
-        return actions
     }
-    
-    private func selectBestVariant(for action: ActionTemplate) -> TemplateVariant {
-        let preferredBandwidth = signals.computeBandwidthPreference(focusId: action.focusId)
-        
-        // Try to find preferred duration
-        if let preferredVariant = action.variants.first(where: { $0.durationMinutes == preferredBandwidth }) {
-            return preferredVariant
-        }
-        
-        // Fall back to middle duration
-        let sortedVariants = action.variants.sorted { $0.durationMinutes < $1.durationMinutes }
-        return sortedVariants[sortedVariants.count / 2]
+
+    private func scoreFocusMatch(template: ActionTemplate, pinned: [String]) -> Double {
+        // simple: bump if template title mentions any pinned micro-skill words
+        guard !pinned.isEmpty else { return 0.6 }
+        let t = template.title.lowercased()
+        return pinned.contains(where: { t.contains($0.lowercased()) }) ? 1.0 : 0.6
     }
-    
-    private func generateHeadline(for action: ActionTemplate, focus: FocusArea) -> String {
-        let focusName = focus.name
-        return "Try this today for \(focusName)"
-    }
-    
-    private func generateExplainWhy(for action: ActionTemplate, focus: FocusArea, score: Double) -> String {
-        let bandwidth = signals.computeBandwidthPreference(focusId: focus.id)
-        let peakHours = signals.computePeakHours()
-        let currentHour = Calendar.current.component(.hour, from: Date.now)
-        
-        var reasons: [String] = []
-        
-        // Add bandwidth reason
-        reasons.append("you prefer \(bandwidth)-minute activities")
-        
-        // Add time reason
-        if peakHours.contains(currentHour) {
-            reasons.append("this time of day works well for you")
-        }
-        
-        // Add focus alignment reason
-        let focusTags = Set(focus.buildingBlocks.flatMap { $0.tags } + focus.pinnedMicroSkillTitles)
-        let actionTags = Set(action.tags)
-        let matchingTags = focusTags.intersection(actionTags)
-        
-        if !matchingTags.isEmpty {
-            reasons.append("it aligns with your focus on \(matchingTags.joined(separator: " and "))")
-        }
-        
-        return "Because \(reasons.joined(separator: " and ")), here's a suggestion for today."
-    }
+}
+
+private extension Array where Element == Double {
+    func average(or fallback: Double) -> Double { isEmpty ? fallback : reduce(0,+)/Double(count) }
+}
+
+private extension Dictionary where Key == Int, Value == Int {
+    func mode(defaultValue: Int) -> Int { reduce(into: [:]) { $0[$1.value, default: 0] += 1 }.max(by: { $0.value < $1.value })?.key ?? defaultValue }
 }

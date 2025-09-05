@@ -25,7 +25,7 @@ struct ElaroApp: App {
                 .task {
                     // Seed on first run
                     let ctx = ModelContext(container)
-                    await SeedImporter.run(modelContext: ctx)
+                    SeedImporter.runIfNeeded(context: ctx)
                 }
         }
         .modelContainer(container)

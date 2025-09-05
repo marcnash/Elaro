@@ -1,183 +1,107 @@
 import Foundation
 import SwiftData
 
-struct SeedImporter {
-    static func run(modelContext: ModelContext) async {
-        // Check if we've already imported this version
-        let userDefaults = UserDefaults.standard
-        let importedVersionKey = "seedContentVersion"
-        let currentVersion = 1
-        
-        if userDefaults.integer(forKey: importedVersionKey) >= currentVersion {
-            print("Seed content already imported (version \(currentVersion))")
-            return
-        }
-        
-        do {
-            // Load seed data
-            guard let seedData = loadSeedData() else {
-                print("Failed to load seed data")
-                return
-            }
-            
-            // Import action templates
-            try await importActionTemplates(seedData, modelContext: modelContext)
-            
-            // Create default focus areas if they don't exist
-            try await createDefaultFocusAreas(modelContext: modelContext)
-            
-            // Mark as imported
-            userDefaults.set(currentVersion, forKey: importedVersionKey)
-            print("Seed content imported successfully (version \(currentVersion))")
-            
-        } catch {
-            print("Failed to import seed content: \(error)")
-        }
-    }
-    
-    private static func loadSeedData() -> SeedData? {
-        guard let url = Bundle.main.url(forResource: "actions_seed", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else {
-            print("Could not find actions_seed.json in bundle")
-            return nil
-        }
-        
-        do {
-            let decoder = JSONDecoder()
-            return try decoder.decode(SeedData.self, from: data)
-        } catch {
-            print("Failed to decode seed data: \(error)")
-            return nil
-        }
-    }
-    
-    private static func importActionTemplates(_ seedData: SeedData, modelContext: ModelContext) async throws {
-        for actionData in seedData.actions {
-            // Check if template already exists
-            let predicate = #Predicate<ActionTemplate> { template in
-                template.id == actionData.id
-            }
-            let descriptor = FetchDescriptor<ActionTemplate>(predicate: predicate)
-            let existing = try modelContext.fetch(descriptor).first
-            
-            if let existing = existing {
-                // Update if content version is newer
-                if actionData.contentVersion > existing.contentVersion {
-                    updateActionTemplate(existing, with: actionData)
-                    print("Updated action template: \(actionData.id)")
-                }
-            } else {
-                // Create new template
-                let template = createActionTemplate(from: actionData)
-                modelContext.insert(template)
-                print("Created action template: \(actionData.id)")
-            }
-        }
-        
-        try modelContext.save()
-    }
-    
-    private static func updateActionTemplate(_ template: ActionTemplate, with data: ActionData) {
-        template.focusId = data.focusId
-        template.title = data.title
-        template.whyLine = data.whyLine
-        template.tags = data.tags
-        template.difficulty = data.difficulty
-        template.contraindications = data.contraindications
-        template.contentVersion = data.contentVersion
-        
-        // Update variants
-        template.variants = data.variants.map { variantData in
-            TemplateVariant(durationMinutes: variantData.durationMinutes, steps: variantData.steps)
-        }
-    }
-    
-    private static func createActionTemplate(from data: VariantData) -> ActionTemplate {
-        let template = ActionTemplate(
-            id: data.id,
-            focusId: data.focusId,
-            title: data.title,
-            whyLine: data.whyLine,
-            tags: data.tags,
-            difficulty: data.difficulty,
-            variants: data.variants.map { variantData in
-                TemplateVariant(durationMinutes: variantData.durationMinutes, steps: variantData.steps)
-            },
-            contraindications: data.contraindications,
-            contentVersion: data.contentVersion
-        )
-        return template
-    }
-    
-    private static func createDefaultFocusAreas(modelContext: ModelContext) async throws {
-        // Check if focus areas already exist
-        let descriptor = FetchDescriptor<FocusArea>()
-        let existingFocuses = try modelContext.fetch(descriptor)
-        
-        if existingFocuses.isEmpty {
-            // Create Independence focus
-            let independenceBlocks = [
-                BuildingBlock(type: "microSkill", title: "Try first, ask for help after", desc: "Wait time invites initiative", tags: ["initiative"]),
-                BuildingBlock(type: "ritual", title: "Weekend outfit choice", desc: "Regular practice builds confidence", tags: ["choice_making"]),
-                BuildingBlock(type: "support", title: "Lay out two options", desc: "Structure without control", tags: ["choice_making"])
-            ]
-            
-            let independenceFocus = FocusArea(
-                id: "independence",
-                name: "Independence",
-                active: true,
-                startedAt: Date.now,
-                buildingBlocks: independenceBlocks,
-                pinnedMicroSkillTitles: []
-            )
-            modelContext.insert(independenceFocus)
-            
-            // Create Emotion Skills focus
-            let emotionBlocks = [
-                BuildingBlock(type: "microSkill", title: "Name 3 feelings", desc: "Build emotional vocabulary", tags: ["labeling"]),
-                BuildingBlock(type: "ritual", title: "Feelings check‑in at dinner", desc: "Regular practice in calm moments", tags: ["labeling"]),
-                BuildingBlock(type: "support", title: "Visual chart", desc: "Reference tool for naming feelings", tags: ["labeling"])
-            ]
-            
-            let emotionFocus = FocusArea(
-                id: "emotion_skills",
-                name: "Emotion Skills",
-                active: true,
-                startedAt: Date.now,
-                buildingBlocks: emotionBlocks,
-                pinnedMicroSkillTitles: []
-            )
-            modelContext.insert(emotionFocus)
-            
-            try modelContext.save()
-            print("Created default focus areas")
-        }
-    }
+// MARK: - Decoding structs (tolerant)
+private struct SeedFile: Decodable {
+    let contentVersion: Int?       // optional file-level version
+    let actions: [SeedAction]
 }
-
-// MARK: - Seed Data Models
-
-struct SeedData: Codable {
-    let contentVersion: Int
-    let actions: [VariantData]
-}
-
-struct VariantData: Codable {
+private struct SeedAction: Decodable {
     let id: String
-    let focusId: String
+    let focusId: String            // "independence" | "emotion_skills"
     let title: String
     let whyLine: String
     let tags: [String]
     let difficulty: Int
-    let variants: [VariantInfo]
-    let contraindications: [String]
-    let contentVersion: Int
+    let variants: [SeedVariant]
+    let contraindications: [String]?
+    let contentVersion: Int?       // optional action-level override
 }
-
-struct VariantInfo: Codable {
+private struct SeedVariant: Decodable {
     let durationMinutes: Int
     let steps: [String]
 }
 
-// Alias for the action data structure
-typealias ActionData = VariantData
+@MainActor
+enum SeedImporter {
+    static func runIfNeeded(context: ModelContext) {
+        // Gate by a simple key so we don't re-import on every launch
+        let key = "seed.actions.v1.ran"
+        if UserDefaults.standard.bool(forKey: key) { return }
+
+        do {
+            try run(context: context)
+            UserDefaults.standard.set(true, forKey: key)
+        } catch {
+            print("Failed to load seed data:", error.localizedDescription)
+        }
+    }
+
+    static func run(context: ModelContext) throws {
+        guard let url = Bundle.main.url(forResource: "actions_seed", withExtension: "json") else {
+            throw NSError(domain: "SeedImporter", code: 1, userInfo: [NSLocalizedDescriptionKey: "actions_seed.json not found in bundle"])
+        }
+        let data = try Data(contentsOf: url)
+        let file = try JSONDecoder().decode(SeedFile.self, from: data)
+
+        // Ensure the 2 default FocusAreas exist
+        upsertFocusIfMissing(id: "independence", name: "Independence", context: context)
+        upsertFocusIfMissing(id: "emotion_skills", name: "Emotion Skills", context: context)
+
+        let fileVersion = file.contentVersion ?? 1
+
+        for a in file.actions {
+            let version = a.contentVersion ?? fileVersion
+            try upsertAction(from: a, contentVersion: version, context: context)
+        }
+        try context.save()
+
+        #if DEBUG
+        // sanity log: actions by focus
+        let all = try context.fetch(FetchDescriptor<ActionTemplate>())
+        let grouped = Dictionary(grouping: all, by: { $0.focusId }).mapValues { $0.count }
+        print("[Seed] actions by focus:", grouped)
+        #endif
+    }
+
+    private static func upsertFocusIfMissing(id: String, name: String, context: ModelContext) {
+        let fd = FetchDescriptor<FocusArea>(predicate: #Predicate { $0.id == id })
+        if let existing = try? context.fetch(fd).first, existing != nil { return }
+        let f = FocusArea(id: id, name: name, active: true, startedAt: Date(),
+                          buildingBlocks: [], pinnedMicroSkillTitles: [], seasonNote: nil)
+        context.insert(f)
+    }
+
+    private static func upsertAction(from a: SeedAction, contentVersion: Int, context: ModelContext) throws {
+        let actionId = a.id
+        let fd = FetchDescriptor<ActionTemplate>(predicate: #Predicate<ActionTemplate> { template in
+            template.id == actionId
+        })
+        if let existing = try context.fetch(fd).first {
+            // update only if newer contentVersion
+            if existing.contentVersion < contentVersion {
+                existing.focusId = a.focusId
+                existing.title = a.title
+                existing.whyLine = a.whyLine
+                existing.tags = a.tags
+                existing.difficulty = a.difficulty
+                existing.contraindications = a.contraindications ?? []
+                existing.variants = a.variants.map { TemplateVariant(durationMinutes: $0.durationMinutes, steps: $0.steps) }
+                existing.contentVersion = contentVersion
+            }
+        } else {
+            let tpl = ActionTemplate(
+                id: a.id,
+                focusId: a.focusId,
+                title: a.title,
+                whyLine: a.whyLine,
+                tags: a.tags,
+                difficulty: a.difficulty,
+                variants: a.variants.map { TemplateVariant(durationMinutes: $0.durationMinutes, steps: $0.steps) },
+                contraindications: a.contraindications ?? [],
+                contentVersion: contentVersion
+            )
+            context.insert(tpl)
+        }
+    }
+}

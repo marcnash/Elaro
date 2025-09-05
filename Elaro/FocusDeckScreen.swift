@@ -5,6 +5,8 @@ struct FocusDeckScreen: View {
     @State private var selectedFocus: FocusKey = .independence
     @State private var depth: FocusDepth? = .today
     @State private var engines: FocusEngineContainer?
+    @State private var showDebug = false
+    @State private var lastWhy = ""
     
     var body: some View {
         NavigationStack {
@@ -43,10 +45,25 @@ struct FocusDeckScreen: View {
             }
             .navigationTitle("Focus")
             .navigationBarTitleDisplayMode(.inline)
+            .onLongPressGesture {
+                showDebug.toggle()
+            }
+            .overlay(alignment: .topLeading) {
+                if showDebug {
+                    EngineDebugOverlay(
+                        focusId: selectedFocus.rawValue,
+                        actionCount: engines?.store.actions(for: selectedFocus.rawValue).count ?? 0,
+                        why: lastWhy
+                    )
+                }
+            }
             .onAppear {
                 if engines == nil {
                     engines = FocusEngineContainer(modelContext: modelContext)
                 }
+            }
+            .onChange(of: selectedFocus) {
+                updateDebugInfo()
             }
         }
     }
@@ -62,6 +79,12 @@ struct FocusDeckScreen: View {
             buildingBlocks: [],
             pinnedMicroSkillTitles: []
         )
+    }
+    
+    private func updateDebugInfo() {
+        guard let engines = engines else { return }
+        let suggestions = engines.recommender.rank(for: selectedFocus.rawValue)
+        lastWhy = suggestions.first?.whySummary ?? ""
     }
 }
 

@@ -9,11 +9,13 @@ class FocusEngineContainer {
     let recommender: RecommenderEngine
     let weeklyAdjuster: WeeklyAdjuster
     let focusPlanner: FocusPlanner
+    let explainWhyBuilder: ExplainWhyBuilder
     
     init(modelContext: ModelContext) {
         self.store = FocusStore(modelContext: modelContext)
         self.signals = SignalsEngine(store: store)
-        self.recommender = RecommenderEngine(store: store)
+        self.explainWhyBuilder = ExplainWhyBuilder()
+        self.recommender = RecommenderEngine(store: store, signals: signals, explain: explainWhyBuilder)
         self.weeklyAdjuster = WeeklyAdjuster(store: store)
         self.focusPlanner = FocusPlanner(store: store)
     }

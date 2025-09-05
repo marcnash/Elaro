@@ -13,7 +13,8 @@
         { "durationMinutes": 10, "steps": ["Two outfits", "They dress first", "Assist only if asked"] },
         { "durationMinutes": 20, "steps": ["Two outfits", "They dress", "Add simple accessory choice"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     },
     {
       "id": "A-IND-TRY-FIRST-001",
@@ -27,7 +28,8 @@
         { "durationMinutes": 10, "steps": ["Set 60s wait", "Name one effort you noticed"] },
         { "durationMinutes": 20, "steps": ["Try a 2‑step chore", "You're backup"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     },
     {
       "id": "A-IND-SEQUENCE-001",
@@ -41,7 +43,8 @@
         { "durationMinutes": 10, "steps": ["Pick 3-step task", "Guide first step", "Let them continue"] },
         { "durationMinutes": 20, "steps": ["Pick 4-step task", "Write steps down", "They follow list"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     },
     {
       "id": "A-EMO-LABEL-001",
@@ -55,7 +58,8 @@
         { "durationMinutes": 10, "steps": ["Use feelings chart", "Name 1 body clue"] },
         { "durationMinutes": 20, "steps": ["Read a short story", "Guess character's feeling together"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     },
     {
       "id": "A-EMO-CO-REG-001",
@@ -69,7 +73,8 @@
         { "durationMinutes": 10, "steps": ["Breathe together", "Name what you feel"] },
         { "durationMinutes": 20, "steps": ["Breathe together", "Share calming strategy", "Practice it"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     },
     {
       "id": "A-EMO-REPAIR-001",
@@ -83,7 +88,8 @@
         { "durationMinutes": 10, "steps": ["Model full repair", "Practice with role play"] },
         { "durationMinutes": 20, "steps": ["Model full repair", "Practice with real situation", "Reflect together"] }
       ],
-      "contraindications": ["skip_if_dysregulated"]
+      "contraindications": ["skip_if_dysregulated"],
+      "contentVersion": 1
     }
   ]
 }

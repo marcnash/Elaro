@@ -34,6 +34,16 @@ class FocusStore {
         }
     }
     
+    func isNew(templateId: String) -> Bool {
+        // Check if template was used in the last 7 days
+        let endDate = Date.now
+        let startDate = Calendar.current.date(byAdding: .day, value: -7, to: endDate) ?? endDate
+        let range = DateInterval(start: startDate, end: endDate)
+        
+        let instances = actionInstances(in: range)
+        return !instances.contains { $0.templateId == templateId }
+    }
+    
     // MARK: - Action Instances
     
     func actionInstances(in range: DateInterval, focusId: String? = nil) -> [ActionInstance] {

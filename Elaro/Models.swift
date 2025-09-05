@@ -10,14 +10,16 @@ import Foundation
     var startedAt: Date
     @Relationship(deleteRule: .cascade) var buildingBlocks: [BuildingBlock] = [] // exactly 3 when configured
     var pinnedMicroSkillTitles: [String] // influence recommender
+    var seasonNote: String? = nil // per-focus season notes
     
-    init(id: String, name: String, active: Bool = true, startedAt: Date = Date.now, buildingBlocks: [BuildingBlock] = [], pinnedMicroSkillTitles: [String] = []) {
+    init(id: String, name: String, active: Bool = true, startedAt: Date = Date.now, buildingBlocks: [BuildingBlock] = [], pinnedMicroSkillTitles: [String] = [], seasonNote: String? = nil) {
         self.id = id
         self.name = name
         self.active = active
         self.startedAt = startedAt
         self.buildingBlocks = buildingBlocks
         self.pinnedMicroSkillTitles = pinnedMicroSkillTitles
+        self.seasonNote = seasonNote
     }
 }
 

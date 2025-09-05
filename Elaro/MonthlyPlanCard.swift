@@ -23,11 +23,16 @@ struct MonthlyPlanCard: View {
                 VStack(spacing: 16) {
                     ForEach(Array(buildingBlocks.enumerated()), id: \.element.id) { index, block in
                         BuildingBlockTileView(
-                            block: block,
-                            isPinned: pinnedTitles.contains(block.title),
-                            onUpdate: { updatedBlock in
-                                updateBuildingBlock(at: index, with: updatedBlock)
-                            },
+                            type: BuildingBlockTileView.BlockType(rawValue: block.type.capitalized) ?? .microSkill,
+                            title: Binding(
+                                get: { buildingBlocks[index].title },
+                                set: { buildingBlocks[index].title = $0 }
+                            ),
+                            description: Binding(
+                                get: { buildingBlocks[index].desc ?? "" },
+                                set: { buildingBlocks[index].desc = $0.isEmpty ? nil : $0 }
+                            ),
+                            pinned: pinnedTitles.contains(block.title),
                             onTogglePin: {
                                 togglePin(for: block.title)
                             }
@@ -83,63 +88,6 @@ struct MonthlyPlanCard: View {
     }
 }
 
-struct BuildingBlockTileView: View {
-    @State var block: BuildingBlock
-    let isPinned: Bool
-    let onUpdate: (BuildingBlock) -> Void
-    let onTogglePin: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header with Pin
-            HStack {
-                Text(block.type.capitalized)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
-                Button(action: onTogglePin) {
-                    Image(systemName: isPinned ? "pin.fill" : "pin")
-                        .foregroundColor(isPinned ? .blue : .secondary)
-                        .font(.caption)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(isPinned ? "Unpin" : "Pin")
-                .accessibilityHint("Tap to \(isPinned ? "unpin" : "pin") this building block")
-            }
-            
-            // Editable Title
-            TextField("Title", text: $block.title)
-                .font(.headline)
-                .fontWeight(.semibold)
-                .textFieldStyle(.plain)
-                .onChange(of: block.title) {
-                    onUpdate(block)
-                }
-            
-            // Editable Description
-            TextField("Description", text: Binding(
-                get: { block.desc ?? "" },
-                set: { block.desc = $0.isEmpty ? nil : $0 }
-            ), axis: .vertical)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .textFieldStyle(.plain)
-                .lineLimit(2...4)
-                .onChange(of: block.desc) {
-                    onUpdate(block)
-                }
-        }
-        .padding(16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(isPinned ? .blue : .clear, lineWidth: 2)
-        )
-    }
-}
 
 struct BoundaryChip: View {
     @State private var boundaryText: String = "Keep bedtime predictable"
