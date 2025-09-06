@@ -1,10 +1,10 @@
+// EngineDebugOverlay.swift
 import SwiftUI
 
 struct EngineDebugOverlay: View {
     let focusId: String
     let actionCount: Int
     let why: String
-
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("DEBUG · \(focusId)").font(.caption).bold()

@@ -22,11 +22,6 @@ struct ElaroApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
-                .task {
-                    // Seed on first run
-                    let ctx = ModelContext(container)
-                    SeedImporter.runIfNeeded(context: ctx)
-                }
         }
         .modelContainer(container)
     }
